@@ -61,5 +61,5 @@ ensureSingleApp() {
 
 for app in $compose_ctx_path/*/; do
   echo "Deploying $(basename "$app") app...";
-  ensureSingleApp "${INPUT_PREFIX}-${app}" $(basename "$app")
+  ensureSingleApp "${app}" "${INPUT_PREFIX}-$(basename $app)"
 done
