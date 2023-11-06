@@ -1,4 +1,4 @@
-# Deploy from Github
+# Caprover Compose
 
 This Github Action allows the deployment of multiple apps directly from Github by utilizing the official Caprover CLI.
 As Caprover doesn't support docker-compose stil([link](https://caprover.com/docs/docker-compose.html)), this action introduces custom logic for multiple application deployment. By the way, you have to translate the docker-compose into the format which this action can understand.
@@ -15,7 +15,7 @@ Here is the example directory structure of a system consisting of multiple micro
 |  |_01_enable_ssl.json
 |  |_02_map_port.yml
 |  |_...
-|  |_0n_output.json
+|  |_99_output.json
 |_ auth_api
 |_ stock_api
 |_ ...
