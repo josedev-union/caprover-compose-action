@@ -53,7 +53,7 @@ ensureSingleApp() {
     exit 1;
   fi
   echo "[app:$app_name] configuration step!";
-  for f in $(find $app_ctx_path/ -iregex '.*\.\(yml\|yaml\|json\)' -type f | sort); do
+  for f in $(find $app_ctx_path/ -type f | egrep -i 'yml|yaml|json' | sort); do
     echo "[app:$app_name] - processing $f config file...";
     caprover api -c $app_ctx_path/$f
   done
