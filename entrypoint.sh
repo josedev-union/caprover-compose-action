@@ -1,5 +1,5 @@
-#!/bin/sh
-set -ex
+#!/bin/bash
+set -e
 
 # TODO(joseb):
 #     1. Convert to python. ref: https://github.com/ak4zh/Caprover-API
@@ -26,7 +26,7 @@ createApp() {
   app_name=${1}
   caprover api \
   --path "/user/apps/appDefinitions/register?detached=1" \
-  --method "GET" \
+  --method "POST" \
   --data "{\"appName\":\"${app_name}\",\"hasPersistentData\":false}"
 }
 
@@ -42,21 +42,29 @@ ensureSingleApp() {
   echo "[app:$app_name] deployment step!";
   set +e
   res=$(caprover deploy --appName $app_name -c $app_ctx_path/captain-definition)
-  set -e
-  if [[ $res == *"not exist"* ]]; then
-    echo "[app:$app_name] create a new app!";
-    createApp $app_name
-    echo "[app:$app_name] deployment step!";
-    caprover deploy --appName $app_name -c $app_ctx_path/captain-definition
+  if [ $? -eq 0 ]; then
+    set -e
+    echo "[app:$app_name] successfully deployed! $res";
+  else
+    set -e
+    if [[ "$res" == *"not exist"* ]]; then
+      echo "[app:$app_name] create a new app!";
+      createApp $app_name;
+      echo "[app:$app_name] deployment step!";
+      caprover deploy --appName $app_name -c $app_ctx_path/captain-definition;
+    else
+      echo "::error::[app:$app_name]Caprover deploy failed."
+      exit 1;
+    fi
   fi
   echo "[app:$app_name] configuration step!";
-  for f in $(find $app_ctx_path/ -iregex '.*\.\(yml\|yaml\|json\)' -type f | sort); do
+  for f in $(find $app_ctx_path/ -type f | egrep -i 'yml|yaml|json' | sort); do
     echo "[app:$app_name] - processing $f config file...";
-    caprover api -c $app_ctx_path/$f
+    caprover api -c $f
   done
 }
 
 for app in $compose_ctx_path/*/; do
   echo "Deploying $(basename "$app") app...";
-  ensureSingleApp $app $(basename "$app")
+  ensureSingleApp "${app}" "${INPUT_PREFIX}-$(basename $app)"
 done
