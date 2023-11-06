@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # TODO(joseb):
 #     1. Convert to python. ref: https://github.com/ak4zh/Caprover-API
@@ -43,10 +43,10 @@ ensureSingleApp() {
   set +e
   res=$(caprover deploy --appName $app_name -c $app_ctx_path/captain-definition)
   if [ $? -eq 0 ]; then
-    set -ex
+    set -e
     echo "[app:$app_name] successfully deployed! $res";
   else
-    set -ex
+    set -e
     if [[ "$res" == *"not exist"* ]]; then
       echo "[app:$app_name] create a new app!";
       createApp $app_name;
@@ -60,7 +60,7 @@ ensureSingleApp() {
   echo "[app:$app_name] configuration step!";
   for f in $(find $app_ctx_path/ -type f | egrep -i 'yml|yaml|json' | sort); do
     echo "[app:$app_name] - processing $f config file...";
-    caprover api -c $app_ctx_path/$f
+    caprover api -c $f
   done
 }
 
