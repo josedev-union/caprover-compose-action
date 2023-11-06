@@ -42,15 +42,20 @@ ensureSingleApp() {
   echo "[app:$app_name] deployment step!";
   set +e
   res=$(caprover deploy --appName $app_name -c $app_ctx_path/captain-definition)
-  set -ex
-  if [[ "$res" == *"not exist"* ]]; then
-    echo "[app:$app_name] create a new app!";
-    createApp $app_name;
-    echo "[app:$app_name] deployment step!";
-    caprover deploy --appName $app_name -c $app_ctx_path/captain-definition;
+  if [ $? -eq 0 ]; then
+    set -ex
+    echo "[app:$app_name] successfully deployed! $res";
   else
-    echo "::error::[app:$app_name]Caprover deploy failed."
-    exit 1;
+    set -ex
+    if [[ "$res" == *"not exist"* ]]; then
+      echo "[app:$app_name] create a new app!";
+      createApp $app_name;
+      echo "[app:$app_name] deployment step!";
+      caprover deploy --appName $app_name -c $app_ctx_path/captain-definition;
+    else
+      echo "::error::[app:$app_name]Caprover deploy failed."
+      exit 1;
+    fi
   fi
   echo "[app:$app_name] configuration step!";
   for f in $(find $app_ctx_path/ -type f | egrep -i 'yml|yaml|json' | sort); do
