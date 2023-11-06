@@ -1,4 +1,4 @@
-# Caprover Compose
+# Caprover Compose Action
 
 This Github Action allows the deployment of multiple apps directly from Github by utilizing the official Caprover CLI.
 As Caprover doesn't support docker-compose stil([link](https://caprover.com/docs/docker-compose.html)), this action introduces custom logic for multiple application deployment. By the way, you have to translate the docker-compose into the format which this action can understand.
@@ -43,15 +43,41 @@ Example configuration file `01_enable_ssl.json`;
 }
 ```
 
-## Input parameters
+## Action parameters
 This Github Action requires the following parameters;
 - server
-  Captain server url. For example, https://captain.apps.your-domain.com.
+
+  Captain server url. For example, https://captain.your-domain.com.
 - password
+
   Captain password.
 - context
+
   The path of definition and configuration files of applications. Optional. Default: `.caprover/`
 - prefix
+
   The name prefix for all applications in the compose.
   Note: Some Caprover APIs require app name as a request parameter so when you prepare app configuration files, keep in mind that you have to set the app name correctly. `${prefix}-${app_directory_name}`
   For example, you set `prefix` as `ci`, then the applications' names in the above example directory structure are `ci-frontend`, `ci-auth_api`, etc.
+
+Example usage;
+```yaml
+name: Container image
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
+
+      - name: Deploy caprover
+        uses: josedev-union/caprover-compose-action@main
+        with:
+          server: https://captain.your-domain.com
+          prefix: ci
+```
