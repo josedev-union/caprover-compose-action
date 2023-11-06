@@ -12,6 +12,9 @@ inputs:
   context:
     description: 'The path of app config and def files'
     required: true
+  prefix:
+    description: 'The prefix of app name'
+    required: true
 
 runs:
   using: 'docker'

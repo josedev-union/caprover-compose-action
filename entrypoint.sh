@@ -45,9 +45,12 @@ ensureSingleApp() {
   set -e
   if [[ $res == *"not exist"* ]]; then
     echo "[app:$app_name] create a new app!";
-    createApp $app_name
+    createApp $app_name;
     echo "[app:$app_name] deployment step!";
-    caprover deploy --appName $app_name -c $app_ctx_path/captain-definition
+    caprover deploy --appName $app_name -c $app_ctx_path/captain-definition;
+  else
+    echo "::error::[app:$app_name]Caprover deploy failed."
+    exit 1;
   fi
   echo "[app:$app_name] configuration step!";
   for f in $(find $app_ctx_path/ -iregex '.*\.\(yml\|yaml\|json\)' -type f | sort); do
@@ -58,5 +61,5 @@ ensureSingleApp() {
 
 for app in $compose_ctx_path/*/; do
   echo "Deploying $(basename "$app") app...";
-  ensureSingleApp $app $(basename "$app")
+  ensureSingleApp "${INPUT_PREFIX}-${app}" $(basename "$app")
 done
