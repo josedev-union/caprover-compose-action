@@ -1,0 +1,18 @@
+name: 'caprover-compose'
+description: 'Github Action for deploying multiple apps to Caprover.'
+author: 'joseb'
+
+inputs:
+  server:
+    description: 'Caprover server URL, i.e. https://captain.apps.your-domain.com.'
+    required: true
+  password:
+    description: 'Caprover password'
+    required: true
+  context:
+    description: 'The path of app config and def files'
+    required: true
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
