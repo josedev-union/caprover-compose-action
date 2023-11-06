@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -ex
 
 # TODO(joseb):
@@ -26,7 +26,7 @@ createApp() {
   app_name=${1}
   caprover api \
   --path "/user/apps/appDefinitions/register?detached=1" \
-  --method "GET" \
+  --method "POST" \
   --data "{\"appName\":\"${app_name}\",\"hasPersistentData\":false}"
 }
 
@@ -42,8 +42,8 @@ ensureSingleApp() {
   echo "[app:$app_name] deployment step!";
   set +e
   res=$(caprover deploy --appName $app_name -c $app_ctx_path/captain-definition)
-  set -e
-  if [[ $res == *"not exist"* ]]; then
+  set -ex
+  if [[ "$res" == *"not exist"* ]]; then
     echo "[app:$app_name] create a new app!";
     createApp $app_name;
     echo "[app:$app_name] deployment step!";
