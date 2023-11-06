@@ -56,7 +56,7 @@ ensureSingleApp() {
   done
 }
 
-for app in $(ls $compose_ctx_path/*/); do
+for app in $compose_ctx_path/*/; do
   echo "Deploying $(basename "$app") app...";
   ensureSingleApp $app $(basename "$app")
 done
