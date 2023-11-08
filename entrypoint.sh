@@ -37,6 +37,7 @@ AUTH="x-captain-auth: ${getToken}"
 #
 waitApp() {
   app_name=$1
+  set -x
   for i in {1..10}; do
     res=$(curl -sSf "$CAPROVER_URL/api/v2/user/apps/appData/$app_name" -H "$CTYPE" -H "$NS" -H "$AUTH")
     echo $res|jq '.description' -r && echo "$res"|grep '"status":100,' >/dev/null
@@ -50,6 +51,7 @@ waitApp() {
       sleep 10
     fi
   done
+  set +x
 }
 
 # setOutput does action output
