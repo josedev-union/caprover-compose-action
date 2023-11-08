@@ -6,6 +6,17 @@ As Caprover doesn't support docker-compose stil([link](https://caprover.com/docs
 - First, in the compose context dir(configurable by `context` parameter), create one directory per one application. Directory name is used as the application name.
 - In each application folder, create a `captain_definition` file. This will be used for application deployment.
 - Also in the same folder, you can create `json` or `yml` files to configure the application. The file format should follow Caprover configuration file for consuming Caprover API([link](https://github.com/caprover/caprover-cli/tree/master#api)). These files are applied to the application in the order of their names using `caprover api` command.
+Note: If Caprover configuration file includes application name, please use `$APP` as application name because a unique application name is generated per a pull request.
+For example, this is a Caprover configuration file to enable SSL.
+```json
+{
+  "path": "/user/apps/appDefinitions/enablebasedomainssl",
+  "method": "POST",
+  "data": {
+    "appName": "$APP"
+  }
+}
+```
 
 ## Example compose context
 Here is the example directory structure of a system consisting of multiple microservices.
@@ -54,11 +65,6 @@ This Github Action requires the following parameters;
 - context
 
   The path of definition and configuration files of applications. Optional. Default: `.caprover/`
-- prefix
-
-  The name prefix for all applications in the compose.
-  Note: Some Caprover APIs require app name as a request parameter so when you prepare app configuration files, keep in mind that you have to set the app name correctly. `${prefix}-${app_directory_name}`
-  For example, you set `prefix` as `ci`, then the applications' names in the above example directory structure are `ci-frontend`, `ci-auth_api`, etc.
 
 Example usage;
 ```yaml
@@ -79,5 +85,4 @@ jobs:
         uses: josedev-union/caprover-compose-action@main
         with:
           server: https://captain.your-domain.com
-          prefix: ci
 ```
