@@ -27,7 +27,7 @@ getToken() {
   token=$(echo "$res"|awk -F'"token":"' '{print $2}'|awk -F'"' '{print $1}'|grep .)
   echo $token
 }
-AUTH="x-captain-auth: ${getToken}"
+AUTH="x-captain-auth: $(getToken)"
 set +x
 
 ########################### Function def
