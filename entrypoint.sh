@@ -108,7 +108,7 @@ ensureSingleApp() {
   echo "[app:$app_alias] configuration step!";
   for f in $(find $app_ctx_path/ -type f | egrep -i 'yml|yaml|json' | sort); do
     echo "[app:$app_alias] - processing $f config file...";
-    sed -i 's/\$APP/${app_name}/g' $f
+    sed -i "s/\$APP/$app_name/g" $f
     caprover api -c $f
   done
 }
