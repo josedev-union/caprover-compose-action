@@ -45,6 +45,7 @@ ensureSingleApp() {
   app_ctx_path=${1}
   app_alias=${2}
   app_name=$(generateAppName ${2})
+  echo "[app:$app_alias] app name: $app_name";
 
   # Deploy app
   echo "[app:$app_alias] deployment step!";
