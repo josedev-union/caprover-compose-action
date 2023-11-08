@@ -6,12 +6,12 @@ set -e
 #     2. Exception handling. This will be much easier with python sdk.
 #     3. Set output, like app url etc. This will be much easier with python sdk.
 #     4. App name validation
-#     5. Detect appName in config files and append prefix automatically
-#     6. Generate prefix based on the git ref automatically if not presented.
+#     5. Generate prefix based on the git ref automatically if not presented.
 
 
 compose_ctx_path=${INPUT_CONTEXT:-.caprover}
 app_name_prefix=${INPUT_PREFIX:-pr}
+event_id=$(echo "$GITHUB_REF" | awk -F / '{print $3}')
 
 export CAPROVER_URL=$INPUT_SERVER
 export CAPROVER_PASSWORD=${INPUT_PASSWORD:-captain42}
@@ -86,7 +86,7 @@ preValidate() {
 }
 
 generateAppName() {
-  echo "${app_name_prefix}-${GITHUB_REPOSITORY_ID}-${GITHUB_EVENT_NUMBER}-${1}"
+  echo "${app_name_prefix}-${GITHUB_REPOSITORY_ID}-${event_id}-${1}"
 }
 
 for app in $compose_ctx_path/*/; do
