@@ -24,7 +24,7 @@ CTYPE="Content-Type: application/json"
 getToken() {
   res=$(curl -sSf "$CAPROVER_URL/api/v2/login" -X POST -d '{"password":"'$CAPROVER_PASSWORD'"}' -H "$CTYPE" -H "$NS")
   token=$(echo "$res"|awk -F'"token":"' '{print $2}'|awk -F'"' '{print $1}'|grep .)
-  return $token
+  echo $token
 }
 AUTH="x-captain-auth: ${getToken}"
 
