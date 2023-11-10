@@ -83,14 +83,13 @@ renderConfigTemplate() {
 setAppEnvVars() {
   app_name=${1}
   env_file_path=${2}
-
+  set -x
   env_data=$(echo $(
     for i in $(cat $env_file_path|awk -F"=" '{print $1}'); do
       val=$(awk -F"=" -v i="$i" '{ if ($1==i) print }' $env_file_path|sed "s/^$i=//");
       echo '{"key":"'$i'","value":"'$val'"},';
     done
   ) | sed 's/.$//')
-  set -x
   caprover api \
   --path "/user/apps/appDefinitions/update" \
   --method "POST" \
