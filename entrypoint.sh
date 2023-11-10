@@ -193,7 +193,8 @@ done
 
 # 3. Destroy
 if [ "$KEEP_APP" == "false" ]; then
-for app in $COMPOSE_CTX_PATH/*/; do
-  echo "Removing $(basename "$app") app...";
-  deleteSingleApp "${app}" "$(basename $app)"
-done
+  for app in $COMPOSE_CTX_PATH/*/; do
+    echo "Removing $(basename "$app") app...";
+    deleteSingleApp "${app}" "$(basename $app)"
+  done
+fi
