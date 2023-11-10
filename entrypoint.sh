@@ -38,7 +38,6 @@ waitApp() {
   for i in $(seq 10); do
     res=$(curl -sSf "$CAPROVER_URL/api/v2/user/apps/appData/$app_name" -H "$CTYPE" -H "$NS" -H "$AUTH")
     echo $res|jq '.description' -r && echo "$res"|grep '"status":100,' >/dev/null
-    echo $res
     is_building=$(echo $res|jq '.data.isAppBuilding')
     echo "App building: $is_building"
     if [ "$is_building" == "false" ]; then
