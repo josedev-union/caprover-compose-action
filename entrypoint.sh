@@ -195,6 +195,7 @@ done
 if [ "$KEEP_APP" == "false" ]; then
   for app in $COMPOSE_CTX_PATH/*/; do
     echo "Removing $(basename "$app") app...";
-    deleteSingleApp "${app}" "$(basename $app)"
+    # Ignore errors during the deletion
+    deleteSingleApp "${app}" "$(basename $app)" || true
   done
 fi

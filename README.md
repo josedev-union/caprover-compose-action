@@ -26,6 +26,45 @@ KEY2=VALUE2
 ...
 ```
 
+## Action parameters
+This Github Action requires the following parameters;
+- server
+
+  Captain server url. For example, https://captain.your-domain.com.
+- password
+
+  Captain password.
+- context
+
+  The path of definition and configuration files of applications. Optional. Default: `.caprover/`
+- prefix
+
+  Prefix of Caprover app names. Optional. Default: `pr`
+- keep
+
+  It specifies whether to keep or remove the Caprover applicationswhen the workflow is finished. Optional. Default: `true`
+
+Example usage;
+```yaml
+name: Container image
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
+
+      - name: Deploy caprover
+        uses: josedev-union/caprover-compose-action@main
+        with:
+          server: https://captain.your-domain.com
+```
+
 ## Example compose context
 Here is the example directory structure of a system consisting of multiple microservices.
 ```txt
@@ -62,35 +101,15 @@ Example configuration file `01_enable_ssl.json`;
 }
 ```
 
-## Action parameters
-This Github Action requires the following parameters;
-- server
+## Caprover Application name
+Caprover deploys applications on Docker and container names are based on application names. So it requires application names to be unique. To make sure the application names are unique across all git repositories, this action generates application names as following;
+`${PREFIX}-${REPOSITORY_ID}-${EVENT_ID}-${APP_CONTEXT_DIRECTORY_NAME}`.
+- `PREFIX`: `prefix` action parameter
+- `REPOSITORY_ID`: Git repository unique id
+- `EVENT_ID`: Git event unique id. It varies depending on even types
+  - Pull requests: pull request number
+  - Push: branch name
+  - Tag: tag
+- `APP_CONTEXT_DIRECTORY_NAME`: dir name for an application in `context` path
 
-  Captain server url. For example, https://captain.your-domain.com.
-- password
-
-  Captain password.
-- context
-
-  The path of definition and configuration files of applications. Optional. Default: `.caprover/`
-
-Example usage;
-```yaml
-name: Container image
-
-on:
-  pull_request:
-    branches: ["main"]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout project
-        uses: actions/checkout@v3
-
-      - name: Deploy caprover
-        uses: josedev-union/caprover-compose-action@main
-        with:
-          server: https://captain.your-domain.com
-```
+For example, `pr-715000497-2-frontend`
