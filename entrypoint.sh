@@ -147,7 +147,7 @@ ensureSingleApp() {
   fi
 
   # Output app name
-  setOutput "$app_alias" "$app_name"
+  setOutput "$app_alias" "$(echo $CAPROVER_URL | sed -e "s/:\/\/captain./:\/\/$app_name./g")"
 }
 
 deleteSingleApp() {
