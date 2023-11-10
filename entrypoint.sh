@@ -38,6 +38,7 @@ waitApp() {
   for i in $(seq 10); do
     res=$(curl -sSf "$CAPROVER_URL/api/v2/user/apps/appData/$app_name" -H "$CTYPE" -H "$NS" -H "$AUTH")
     echo $res|jq '.description' -r && echo "$res"|grep '"status":100,' >/dev/null
+    echo $res
     is_building=$(echo $res|jq '.data.isAppBuilding')
     echo "App building: $is_building"
     if [ "$is_building" == "false" ]; then
@@ -86,7 +87,6 @@ setAppEnvVars() {
   # CRLF to LF
   tmp_env_path=$(mktemp)
   tr -d '\015' < $env_file_path > $tmp_env_path
-  set -x
   env_data=$(echo $(
     for i in $(cat $tmp_env_path|awk -F"=" '{print $1}'); do
       val=$(awk -F"=" -v i="$i" '{ if ($1==i) print }' $tmp_env_path|sed "s/^$i=//");
@@ -98,7 +98,6 @@ setAppEnvVars() {
   --path "/user/apps/appDefinitions/update" \
   --method "POST" \
   --data "{\"appName\":\"${app_name}\",\"envVars\":[${env_data}]}"
-  set +x
 }
 
 # ensureSingleApp deploy and configure a single Caprover app.
@@ -146,6 +145,9 @@ ensureSingleApp() {
     echo "[app:$app_alias] - seting env vars...";
     setAppEnvVars $app_name $app_ctx_path/.env
   fi
+
+  # Output app name
+  setOutput "$app_alias" "$app_name"
 }
 
 deleteSingleApp() {
