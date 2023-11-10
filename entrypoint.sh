@@ -2,16 +2,15 @@
 
 # TODO(joseb):
 #     1. Convert to python. ref: https://github.com/ak4zh/Caprover-API
-#     2. Exception handling. This will be much easier with python sdk.
-#     3. Set output, like app url etc. This will be much easier with python sdk.
-#     4. App name validation
-#     5. Generate prefix based on the git ref automatically if not presented.
+#     2. Set output, like app url etc. This will be much easier with python sdk.
+#     3. App name validation
 
 
 ########################### Global var def
 COMPOSE_CTX_PATH=${INPUT_CONTEXT:-.caprover}
 APP_NAME_PREFIX=${INPUT_PREFIX:-pr}
 EVENT_ID=$(echo "$GITHUB_REF" | awk -F / '{print $3}')
+KEEP_APP=${INPUT_KEEP:-"true"}
 ## caprover cli config vars
 export CAPROVER_URL=$INPUT_SERVER
 export CAPROVER_PASSWORD=${INPUT_PASSWORD:-captain42}
@@ -69,6 +68,37 @@ createApp() {
   --data "{\"appName\":\"${app_name}\",\"hasPersistentData\":false}"
 }
 
+renderConfigTemplate() {
+  app_name=${1}
+  tpl_path=${2}
+  sed -i "s/\$APP/$app_name/g" $tpl_path
+}
+
+# setAppEnvVars converts .env file to json and sets environment variables for a Caprover app.
+#
+# Arguments:
+#     $1: app name.
+#     $2: path to the environment variables file.
+#
+setAppEnvVars() {
+  app_name=${1}
+  env_file_path=${2}
+  # CRLF to LF
+  tmp_env_path=$(mktemp)
+  tr -d '\015' < $env_file_path > $tmp_env_path
+  env_data=$(echo $(
+    for i in $(cat $tmp_env_path|awk -F"=" '{print $1}'); do
+      val=$(awk -F"=" -v i="$i" '{ if ($1==i) print }' $tmp_env_path|sed "s/^$i=//");
+      echo '{"key":"'$i'","value":"'$val'"},';
+    done
+  ) | sed 's/.$//')
+
+  caprover api \
+  --path "/user/apps/appDefinitions/update" \
+  --method "POST" \
+  --data "{\"appName\":\"${app_name}\",\"envVars\":[${env_data}]}"
+}
+
 # ensureSingleApp deploy and configure a single Caprover app.
 #
 # Arguments:
@@ -107,9 +137,36 @@ ensureSingleApp() {
   echo "[app:$app_alias] configuration step!";
   for f in $(find $app_ctx_path/ -type f | egrep -i 'yml|yaml|json' | sort); do
     echo "[app:$app_alias] - processing $f config file...";
-    sed -i "s/\$APP/$app_name/g" $f
+    renderConfigTemplate $app_name $f
     caprover api -c $f
   done
+  if [ -f $app_ctx_path/.env ]; then
+    echo "[app:$app_alias] - seting env vars...";
+    setAppEnvVars $app_name $app_ctx_path/.env
+  fi
+
+  # Output app name
+  setOutput "$app_alias" "$(echo $CAPROVER_URL | sed -e "s/:\/\/captain./:\/\/$app_name./g")"
+}
+
+deleteSingleApp() {
+  app_alias=${1}
+  app_name=$(generateAppName ${2})
+  echo "[app:$app_alias] app name: $app_name";
+
+  # Scale down instance number to zero
+  echo "[app:$app_alias] scaling down instance number to zero...";
+  caprover api \
+  --path "/user/apps/appDefinitions/update" \
+  --method "POST" \
+  --data "{\"appName\":\"${app_name}\",\"instanceCount\":0}"
+
+  # Delete app
+  echo "[app:$app_alias] deleting app...";
+  caprover api \
+  --path "/user/apps/appDefinitions/delete" \
+  --method "POST" \
+  --data "{\"appName\":\"${app_name}\"}"
 }
 
 preValidate() {
@@ -126,8 +183,20 @@ generateAppName() {
 }
 
 ########################### Main
+# 1. validate the request
 preValidate
+
+# 2. Deploy
 for app in $COMPOSE_CTX_PATH/*/; do
   echo "Deploying $(basename "$app") app...";
   ensureSingleApp "${app}" "$(basename $app)"
 done
+
+# 3. Destroy
+if [ "$KEEP_APP" == "false" ]; then
+  for app in $COMPOSE_CTX_PATH/*/; do
+    echo "Removing $(basename "$app") app...";
+    # Ignore errors during the deletion
+    deleteSingleApp "${app}" "$(basename $app)" || true
+  done
+fi

@@ -5,10 +5,11 @@ As Caprover doesn't support docker-compose stil([link](https://caprover.com/docs
 
 - First, in the compose context dir(configurable by `context` parameter), create one directory per one application. Directory name is used as the application name.
 - In each application folder, create a `captain_definition` file. This will be used for application deployment.
-- Also in the same folder, you can create `json` or `yml` files to configure the application. The file format should follow Caprover configuration file for consuming Caprover API([link](https://github.com/caprover/caprover-cli/tree/master#api)). These files are applied to the application in the order of their names using `caprover api` command.
+- In each application folder, you can also create `json` or `yml` files to configure the application. The file format should follow Caprover configuration file for consuming Caprover API([link](https://github.com/caprover/caprover-cli/tree/master#api)). These files are applied to the application in the order of their names using `caprover api` command.
 Note: If Caprover configuration file includes application name, please use `$APP` as application name because a unique application name is generated per a pull request.
 For example, this is a Caprover configuration file to enable SSL.
 ```json
+# 01_enable_ssl.json
 {
   "path": "/user/apps/appDefinitions/enablebasedomainssl",
   "method": "POST",
@@ -16,6 +17,52 @@ For example, this is a Caprover configuration file to enable SSL.
     "appName": "$APP"
   }
 }
+```
+- In each application folder, you can also create `.env` file to set environment variables for the app.
+```txt
+# .env
+KEY1=VALUE1
+KEY2=VALUE2
+...
+```
+
+## Action parameters
+This Github Action requires the following parameters;
+- server
+
+  Captain server url. For example, https://captain.your-domain.com.
+- password
+
+  Captain password.
+- context
+
+  The path of definition and configuration files of applications. Optional. Default: `.caprover/`
+- prefix
+
+  Prefix of Caprover app names. Optional. Default: `pr`
+- keep
+
+  It specifies whether to keep or remove the Caprover applicationswhen the workflow is finished. Optional. Default: `true`
+
+Example usage;
+```yaml
+name: Container image
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
+
+      - name: Deploy caprover
+        uses: josedev-union/caprover-compose-action@main
+        with:
+          server: https://captain.your-domain.com
 ```
 
 ## Example compose context
@@ -54,35 +101,15 @@ Example configuration file `01_enable_ssl.json`;
 }
 ```
 
-## Action parameters
-This Github Action requires the following parameters;
-- server
+## Caprover Application name
+Caprover deploys applications on Docker and container names are based on application names. So it requires application names to be unique. To make sure the application names are unique across all git repositories, this action generates application names as following;
+`${PREFIX}-${REPOSITORY_ID}-${EVENT_ID}-${APP_CONTEXT_DIRECTORY_NAME}`.
+- `PREFIX`: `prefix` action parameter
+- `REPOSITORY_ID`: Git repository unique id
+- `EVENT_ID`: Git event unique id. It varies depending on even types
+  - Pull requests: pull request number
+  - Push: branch name
+  - Tag: tag
+- `APP_CONTEXT_DIRECTORY_NAME`: dir name for an application in `context` path
 
-  Captain server url. For example, https://captain.your-domain.com.
-- password
-
-  Captain password.
-- context
-
-  The path of definition and configuration files of applications. Optional. Default: `.caprover/`
-
-Example usage;
-```yaml
-name: Container image
-
-on:
-  pull_request:
-    branches: ["main"]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout project
-        uses: actions/checkout@v3
-
-      - name: Deploy caprover
-        uses: josedev-union/caprover-compose-action@main
-        with:
-          server: https://captain.your-domain.com
-```
+For example, `pr-715000497-2-frontend`

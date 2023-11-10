@@ -11,10 +11,16 @@ inputs:
     required: true
   context:
     description: 'The path of app config and def files'
-    required: true
+    default: '.caprover'
   prefix:
     description: 'The prefix of app name'
-    required: true
+    default: 'pr'
+  keep:
+    description: 'Specify whether to keep the deployment or not. If false, the deployment will be deleted.'
+    default: 'true'
+    options:
+      - 'true'
+      - 'false'
 
 runs:
   using: 'docker'
