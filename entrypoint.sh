@@ -90,12 +90,12 @@ setAppEnvVars() {
       echo '{"key":"'$i'","value":"'$val'"},';
     done
   ) | sed 's/.$//')
-
+  set -x
   caprover api \
   --path "/user/apps/appDefinitions/update" \
   --method "POST" \
   --data "{\"appName\":\"${app_name}\",\"envVars\":[${env_data}]}"
-
+  set +x
 }
 
 # ensureSingleApp deploy and configure a single Caprover app.
