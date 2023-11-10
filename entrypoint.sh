@@ -83,13 +83,17 @@ renderConfigTemplate() {
 setAppEnvVars() {
   app_name=${1}
   env_file_path=${2}
+  # CRLF to LF
+  tmp_env_path=$(mktemp)
+  tr -d '\015' < $env_file_path > $tmp_env_path
   set -x
   env_data=$(echo $(
-    for i in $(cat $env_file_path|awk -F"=" '{print $1}'); do
-      val=$(awk -F"=" -v i="$i" '{ if ($1==i) print }' $env_file_path|sed "s/^$i=//");
+    for i in $(cat $tmp_env_path|awk -F"=" '{print $1}'); do
+      val=$(awk -F"=" -v i="$i" '{ if ($1==i) print }' $tmp_env_path|sed "s/^$i=//");
       echo '{"key":"'$i'","value":"'$val'"},';
     done
   ) | sed 's/.$//')
+
   caprover api \
   --path "/user/apps/appDefinitions/update" \
   --method "POST" \
