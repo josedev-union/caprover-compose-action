@@ -1,6 +1,7 @@
 # Caprover Compose Action
+<img src="https://caprover.com/img/logo.png" alt="image" width="100" height="auto">
 
-This Github Action allows the deployment of multiple apps directly from Github by utilizing the official Caprover CLI.
+This Github Action allows the deployment of multiple apps directly from Github by utilizing the official [Caprover](https://caprover.com/) CLI.
 As Caprover doesn't support docker-compose stil([link](https://caprover.com/docs/docker-compose.html)), this action introduces custom logic for multiple application deployment. By the way, you have to translate the docker-compose into the format which this action can understand.
 
 - First, in the compose context dir(configurable by `context` parameter), create one directory per one application. Directory name is used as the application alias name.
