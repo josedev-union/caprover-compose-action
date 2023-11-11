@@ -3,7 +3,7 @@
 This Github Action allows the deployment of multiple apps directly from Github by utilizing the official Caprover CLI.
 As Caprover doesn't support docker-compose stil([link](https://caprover.com/docs/docker-compose.html)), this action introduces custom logic for multiple application deployment. By the way, you have to translate the docker-compose into the format which this action can understand.
 
-- First, in the compose context dir(configurable by `context` parameter), create one directory per one application. Directory name is used as the application name.
+- First, in the compose context dir(configurable by `context` parameter), create one directory per one application. Directory name is used as the application alias name.
 - In each application folder, create a `captain_definition` file. This will be used for application deployment.
 - In each application folder, you can also create `json` or `yml` files to configure the application. The file format should follow Caprover configuration file for consuming Caprover API([link](https://github.com/caprover/caprover-cli/tree/master#api)). These files are applied to the application in the order of their names using `caprover api` command.
 Note: If Caprover configuration file includes application name, please use `$APP` as application name because a unique application name is generated per a pull request.
@@ -27,6 +27,7 @@ KEY2=VALUE2
 ```
 
 ## Action parameters
+### Input
 This Github Action requires the following parameters;
 - server
 
@@ -43,6 +44,10 @@ This Github Action requires the following parameters;
 - keep
 
   It specifies whether to keep or remove the Caprover applicationswhen the workflow is finished. Optional. Default: `true`
+
+### Output
+This Github Action outputs the urls of Caprover applications.
+Output parameter name is equal to application aliases.
 
 Example usage;
 ```yaml
@@ -63,6 +68,21 @@ jobs:
         uses: josedev-union/caprover-compose-action@main
         with:
           server: https://captain.your-domain.com
+
+      - name: Output App urls as git comment
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Caprover Front App url 🖌 ${{ steps.caprover.outputs.frontend }}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
 ```
 
 ## Example compose context
@@ -103,13 +123,13 @@ Example configuration file `01_enable_ssl.json`;
 
 ## Caprover Application name
 Caprover deploys applications on Docker and container names are based on application names. So it requires application names to be unique. To make sure the application names are unique across all git repositories, this action generates application names as following;
-`${PREFIX}-${REPOSITORY_ID}-${EVENT_ID}-${APP_CONTEXT_DIRECTORY_NAME}`.
+`${PREFIX}-${REPOSITORY_ID}-${EVENT_ID}-${APP_ALIAS_NAME}`.
 - `PREFIX`: `prefix` action parameter
 - `REPOSITORY_ID`: Git repository unique id
 - `EVENT_ID`: Git event unique id. It varies depending on even types
   - Pull requests: pull request number
   - Push: branch name
   - Tag: tag
-- `APP_CONTEXT_DIRECTORY_NAME`: dir name for an application in `context` path
+- `APP_ALIAS_NAME`: dir name for an application in `context` path
 
 For example, `pr-715000497-2-frontend`
