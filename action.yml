@@ -1,6 +1,8 @@
 name: 'caprover-compose'
 description: 'Github Action for deploying multiple apps to Caprover.'
 author: 'joseb'
+icon: arrow-up-right
+color: orange
 
 inputs:
   server:
