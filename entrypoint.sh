@@ -187,6 +187,8 @@ generateAppName() {
 preValidate
 
 # 2. Deploy
+pwd
+ls -al
 echo $COMPOSE_CTX_PATH/*/
 for app in $COMPOSE_CTX_PATH/*/; do
   echo "Deploying $(basename "$app") app...";
