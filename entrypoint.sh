@@ -187,6 +187,7 @@ generateAppName() {
 preValidate
 
 # 2. Deploy
+echo $COMPOSE_CTX_PATH/*/
 for app in $COMPOSE_CTX_PATH/*/; do
   echo "Deploying $(basename "$app") app...";
   ensureSingleApp "${app}" "$(basename $app)"
