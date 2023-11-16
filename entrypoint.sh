@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
 # TODO(joseb):
 #     1. Convert to python. ref: https://github.com/ak4zh/Caprover-API
