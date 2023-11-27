@@ -114,7 +114,12 @@ ensureSingleApp() {
   # Deploy app
   echo "[app:$app_alias] deployment step!";
   set +e
-  res=$(caprover deploy --appName $app_name -c $app_ctx_path/captain-definition)
+
+  # CRLF to LF
+  tmp_cap_path=$(mktemp)
+  tr -d '\015' < $app_ctx_path/captain-definition > $tmp_cap_path
+
+  res=$(caprover deploy --appName $app_name -c $tmp_cap_path)
   if [ $? -eq 0 ]; then
     set -e
     echo "$res";
@@ -126,7 +131,7 @@ ensureSingleApp() {
       createApp $app_name;
       waitApp $app_name;
       echo "[app:$app_alias] deployment step!";
-      caprover deploy --appName $app_name -c $app_ctx_path/captain-definition;
+      caprover deploy --appName $app_name -c $tmp_cap_path;
     else
       echo "::error::[app:$app_alias]Caprover deploy failed."
       exit 1;
