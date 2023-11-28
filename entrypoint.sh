@@ -11,6 +11,7 @@ COMPOSE_CTX_PATH=${INPUT_CONTEXT:-.caprover}
 EVENT_ID=$(echo "$GITHUB_REF" | awk -F / '{print $3}')
 KEEP_APP=${INPUT_KEEP:-"true"}
 DEBUG_APP=${INPUT_DEBUG:-"false"}
+APP_NAME_PREFIX=$(generateAppNamePrefix)
 
 if [ "$DEBUG_APP" == "true" ]; then
   set -x
@@ -21,6 +22,7 @@ export CAPROVER_URL=$INPUT_SERVER
 export CAPROVER_PASSWORD=${INPUT_PASSWORD:-captain42}
 export CAPROVER_NAME=default
 CAPROVER_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-$GITHUB_BASE_REF}}"
+
 ## caprover api request vars
 NS="x-namespace: captain"
 CTYPE="Content-Type: application/json"
@@ -74,10 +76,11 @@ createApp() {
   --data "{\"appName\":\"${app_name}\",\"hasPersistentData\":false}"
 }
 
-renderConfigTemplate() {
-  app_name=${1}
-  tpl_path=${2}
-  sed -i "s/\$APP/$app_name/g" $tpl_path
+renderTemplate() {
+  tpl_path=${1}
+  app_name=${2}
+  sed -i "s/\$\$APP/$app_name/g" $tpl_path
+  sed -i "s/\$\$PREFIX/$APP_NAME_PREFIX/g" $tpl_path
 }
 
 # setAppEnvVars converts .env file to json and sets environment variables for a Caprover app.
@@ -89,9 +92,14 @@ renderConfigTemplate() {
 setAppEnvVars() {
   app_name=${1}
   env_file_path=${2}
+
+  # render template
+  renderTemplate $env_file_path $app_name
+
   # CRLF to LF
   tmp_env_path=$(mktemp)
   tr -d '\015' < $env_file_path > $tmp_env_path
+
   env_data=$(echo $(
     for i in $(cat $tmp_env_path|awk -F"=" '{print $1}'); do
       val=$(awk -F"=" -v i="$i" '{ if ($1==i) print }' $tmp_env_path|sed "s/^$i=//");
@@ -159,7 +167,7 @@ ensureSingleApp() {
   echo "[app:$app_alias] configuration step!";
   for f in $(find $app_ctx_path/ -type f | egrep -i 'yml|yaml|json' | sort); do
     echo "[app:$app_alias] - processing $f config file...";
-    renderConfigTemplate $app_name $f
+    renderTemplate $f $app_name
     caprover api -c $f
   done
   if [ -f $app_ctx_path/.env ]; then
@@ -200,12 +208,7 @@ preValidate() {
   fi
 }
 
-# generateAppName generates an app name
-#
-# Arguments:
-#     $1: app name.
-#
-generateAppName() {
+generateAppNamePrefix() {
   # Note(joseb): Gitea act doesn't provide GITHUB_REPOSITORY_ID.
   #              To support Gitea act, we use generate repo alias from $GITHUB_REPOSITORY instead.
   # repo_alias=${GITHUB_REPOSITORY_ID:-$(echo $GITHUB_REPOSITORY|sed -e "s/\//-/g")}
@@ -217,10 +220,17 @@ generateAppName() {
 
   if [ "${GITHUB_EVENT_NAME}" != "pull_request" ]
   then
-    APP_NAME_PREFIX=${INPUT_PREFIX:-br${repo_alias}-${EVENT_ID}}
+    echo ${INPUT_PREFIX:-br${repo_alias}-${EVENT_ID}}
   else
-    APP_NAME_PREFIX=${INPUT_PREFIX:-pr${repo_alias}-${EVENT_ID}}
+    echo ${INPUT_PREFIX:-pr${repo_alias}-${EVENT_ID}}
   fi
+}
+# generateAppName generates an app name
+#
+# Arguments:
+#     $1: app name.
+#
+generateAppName() {
   echo "${APP_NAME_PREFIX}-${1}"
 }
 

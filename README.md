@@ -7,7 +7,7 @@ As Caprover doesn't support docker-compose stil([link](https://caprover.com/docs
 - First, in the compose context dir(configurable by `context` parameter), create one directory per one application. Directory name is used as the application alias name.
 - In each application folder, create a `captain_definition` file. This will be used for application deployment.
 - In each application folder, you can also create `json` or `yml` files to configure the application. The file format should follow Caprover configuration file for consuming Caprover API([link](https://github.com/caprover/caprover-cli/tree/master#api)). These files are applied to the application in the order of their names using `caprover api` command.
-Note: If Caprover configuration file includes application name, please use `$APP` as application name because a unique application name is generated per a pull request.
+Note: If Caprover configuration file includes application name, please use `$$APP` as application name because a unique application name is generated per a pull request.
 For example, this is a Caprover configuration file to enable SSL.
 ```json
 # 01_enable_ssl.json
@@ -15,15 +15,17 @@ For example, this is a Caprover configuration file to enable SSL.
   "path": "/user/apps/appDefinitions/enablebasedomainssl",
   "method": "POST",
   "data": {
-    "appName": "$APP"
+    "appName": "$$APP"
   }
 }
 ```
 - In each application folder, you can also create `.env` file to set environment variables for the app.
+In multi-layer applications, a caprover application needs to communicate with other caprover application and the connection information is configured in `.env` file. Typical use case is a database connection. 
+The name of each container is prefixed with `srv-captain--` so you can set `srv-captain--$$PREFIX-db`. `db` is the app directory(app alias) name of db application in the context directory. `$$PREFIX` will be replaced by caprover compose action with the exact app name prefix.
+
 ```txt
 # .env
-KEY1=VALUE1
-KEY2=VALUE2
+SQLALCHEMY_DATABASE_URI=mariadb+mariadbconnector://user:password@srv-captain--$$PREFIX-db:3306/infrahubdb
 ...
 ```
 
