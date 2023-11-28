@@ -16,10 +16,16 @@ inputs:
     default: '.caprover'
   prefix:
     description: 'The prefix of app name'
-    default: 'pr'
+    default: 'Generative'
   keep:
     description: 'Specify whether to keep the deployment or not. If false, the deployment will be deleted.'
     default: 'true'
+    options:
+      - 'true'
+      - 'false'
+  debug:
+    description: 'Specify whether to output the log in verbose or not.'
+    default: 'false'
     options:
       - 'true'
       - 'false'

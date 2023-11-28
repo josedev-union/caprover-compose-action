@@ -8,13 +8,19 @@
 
 ########################### Global var def
 COMPOSE_CTX_PATH=${INPUT_CONTEXT:-.caprover}
-APP_NAME_PREFIX=${INPUT_PREFIX:-pr}
 EVENT_ID=$(echo "$GITHUB_REF" | awk -F / '{print $3}')
 KEEP_APP=${INPUT_KEEP:-"true"}
+DEBUG_APP=${INPUT_DEBUG:-"false"}
+
+if [ "$DEBUG_APP" == "true" ]; then
+  set -x
+fi
+
 ## caprover cli config vars
 export CAPROVER_URL=$INPUT_SERVER
 export CAPROVER_PASSWORD=${INPUT_PASSWORD:-captain42}
 export CAPROVER_NAME=default
+CAPROVER_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-$GITHUB_BASE_REF}}"
 ## caprover api request vars
 NS="x-namespace: captain"
 CTYPE="Content-Type: application/json"
@@ -99,6 +105,21 @@ setAppEnvVars() {
   --data "{\"appName\":\"${app_name}\",\"envVars\":[${env_data}]}"
 }
 
+# getCaproverOptions generates options of caprover deploy command.
+#
+# Arguments:
+#     $1: The path of the app captain definition file.
+#
+getCaproverOptions() {
+  # Check whether the app is built from git source or from an existing container image
+  img_cnt=$(cat $1|grep "imageName"|wc -l)
+  if [ $img_cnt -gt 0 ]; then
+    echo ""
+  else
+    echo "--branch $CAPROVER_BRANCH"
+  fi
+}
+
 # ensureSingleApp deploy and configure a single Caprover app.
 #
 # Arguments:
@@ -113,8 +134,9 @@ ensureSingleApp() {
 
   # Deploy app
   echo "[app:$app_alias] deployment step!";
+  extra_opts=$(getCaproverOptions $app_ctx_path/captain-definition)
   set +e
-  res=$(caprover deploy --appName $app_name -c $app_ctx_path/captain-definition)
+  res=$(caprover deploy --appName $app_name -c $app_ctx_path/captain-definition $extra_opts)
   if [ $? -eq 0 ]; then
     set -e
     echo "$res";
@@ -122,11 +144,11 @@ ensureSingleApp() {
   else
     set -e
     if [[ "$res" == *"not exist"* ]]; then
-      echo "[app:$app_alias] create a new app as it doesn't exist!";
+      echo "[app:$app_alias] create a new app!";
       createApp $app_name;
       waitApp $app_name;
       echo "[app:$app_alias] deployment step!";
-      caprover deploy --appName $app_name -c $app_ctx_path/captain-definition;
+      caprover deploy --appName $app_name -c $app_ctx_path/captain-definition $extra_opts;
     else
       echo "::error::[app:$app_alias]Caprover deploy failed."
       exit 1;
@@ -178,8 +200,28 @@ preValidate() {
   fi
 }
 
+# generateAppName generates an app name
+#
+# Arguments:
+#     $1: app name.
+#
 generateAppName() {
-  echo "${APP_NAME_PREFIX}-${GITHUB_REPOSITORY_ID}-${EVENT_ID}-${1}"
+  # Note(joseb): Gitea act doesn't provide GITHUB_REPOSITORY_ID.
+  #              To support Gitea act, we use generate repo alias from $GITHUB_REPOSITORY instead.
+  # repo_alias=${GITHUB_REPOSITORY_ID:-$(echo $GITHUB_REPOSITORY|sed -e "s/\//-/g")}
+
+  # Note(joseb): Caprover uses Letsencrypt to issue SSL certificate and Letsencrypt supports up to 64 length domain name.
+  #              The full repository name is too long as an app name which is used as prefix of app domain.
+  #              Because of this reason, we have to shorten the repository name.
+  repo_alias=${GITHUB_REPOSITORY_ID:-$(echo $GITHUB_REPOSITORY| md5sum | cut -c1-6)}
+
+  if [ "${GITHUB_EVENT_NAME}" != "pull_request" ]
+  then
+    APP_NAME_PREFIX=${INPUT_PREFIX:-br${repo_alias}-${EVENT_ID}}
+  else
+    APP_NAME_PREFIX=${INPUT_PREFIX:-pr${repo_alias}-${EVENT_ID}}
+  fi
+  echo "${APP_NAME_PREFIX}-${1}"
 }
 
 ########################### Main
