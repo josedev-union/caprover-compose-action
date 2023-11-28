@@ -23,6 +23,12 @@ inputs:
     options:
       - 'true'
       - 'false'
+  debug:
+    description: 'Specify whether to output the log in verbose or not.'
+    default: 'false'
+    options:
+      - 'true'
+      - 'false'
 
 runs:
   using: 'docker'

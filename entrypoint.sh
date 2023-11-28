@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 # TODO(joseb):
 #     1. Convert to python. ref: https://github.com/ak4zh/Caprover-API
@@ -10,6 +10,12 @@
 COMPOSE_CTX_PATH=${INPUT_CONTEXT:-.caprover}
 EVENT_ID=$(echo "$GITHUB_REF" | awk -F / '{print $3}')
 KEEP_APP=${INPUT_KEEP:-"true"}
+DEBUG_APP=${INPUT_DEBUG:-"false"}
+
+if [ "$DEBUG_APP" == "true" ]; then
+  set -x
+fi
+
 ## caprover cli config vars
 export CAPROVER_URL=$INPUT_SERVER
 export CAPROVER_PASSWORD=${INPUT_PASSWORD:-captain42}
