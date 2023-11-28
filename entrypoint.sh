@@ -11,6 +11,25 @@ COMPOSE_CTX_PATH=${INPUT_CONTEXT:-.caprover}
 EVENT_ID=$(echo "$GITHUB_REF" | awk -F / '{print $3}')
 KEEP_APP=${INPUT_KEEP:-"true"}
 DEBUG_APP=${INPUT_DEBUG:-"false"}
+
+generateAppNamePrefix() {
+  # Note(joseb): Gitea act doesn't provide GITHUB_REPOSITORY_ID.
+  #              To support Gitea act, we use generate repo alias from $GITHUB_REPOSITORY instead.
+  # repo_alias=${GITHUB_REPOSITORY_ID:-$(echo $GITHUB_REPOSITORY|sed -e "s/\//-/g")}
+
+  # Note(joseb): Caprover uses Letsencrypt to issue SSL certificate and Letsencrypt supports up to 64 length domain name.
+  #              The full repository name is too long as an app name which is used as prefix of app domain.
+  #              Because of this reason, we have to shorten the repository name.
+  repo_alias=${GITHUB_REPOSITORY_ID:-$(echo $GITHUB_REPOSITORY| md5sum | cut -c1-6)}
+
+  if [ "${GITHUB_EVENT_NAME}" != "pull_request" ]
+  then
+    echo ${INPUT_PREFIX:-br${repo_alias}-${EVENT_ID}}
+  else
+    echo ${INPUT_PREFIX:-pr${repo_alias}-${EVENT_ID}}
+  fi
+}
+
 APP_NAME_PREFIX=$(generateAppNamePrefix)
 
 if [ "$DEBUG_APP" == "true" ]; then
@@ -208,23 +227,6 @@ preValidate() {
   fi
 }
 
-generateAppNamePrefix() {
-  # Note(joseb): Gitea act doesn't provide GITHUB_REPOSITORY_ID.
-  #              To support Gitea act, we use generate repo alias from $GITHUB_REPOSITORY instead.
-  # repo_alias=${GITHUB_REPOSITORY_ID:-$(echo $GITHUB_REPOSITORY|sed -e "s/\//-/g")}
-
-  # Note(joseb): Caprover uses Letsencrypt to issue SSL certificate and Letsencrypt supports up to 64 length domain name.
-  #              The full repository name is too long as an app name which is used as prefix of app domain.
-  #              Because of this reason, we have to shorten the repository name.
-  repo_alias=${GITHUB_REPOSITORY_ID:-$(echo $GITHUB_REPOSITORY| md5sum | cut -c1-6)}
-
-  if [ "${GITHUB_EVENT_NAME}" != "pull_request" ]
-  then
-    echo ${INPUT_PREFIX:-br${repo_alias}-${EVENT_ID}}
-  else
-    echo ${INPUT_PREFIX:-pr${repo_alias}-${EVENT_ID}}
-  fi
-}
 # generateAppName generates an app name
 #
 # Arguments:
