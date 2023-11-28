@@ -40,7 +40,7 @@ fi
 export CAPROVER_URL=$INPUT_SERVER
 export CAPROVER_PASSWORD=${INPUT_PASSWORD:-captain42}
 export CAPROVER_NAME=default
-CAPROVER_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-$GITHUB_BASE_REF}}"
+export CAPROVER_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-$GITHUB_BASE_REF}}"
 
 ## caprover api request vars
 NS="x-namespace: captain"
@@ -132,19 +132,13 @@ setAppEnvVars() {
   --data "{\"appName\":\"${app_name}\",\"envVars\":[${env_data}]}"
 }
 
-# getCaproverOptions generates options of caprover deploy command.
+# getCaproverOptions generates options of caprover deploy command per app.
 #
 # Arguments:
 #     $1: The path of the app captain definition file.
-#
+# reserved
 getCaproverOptions() {
-  # Check whether the app is built from git source or from an existing container image
-  img_cnt=$(cat $1|grep "imageName"|wc -l)
-  if [ $img_cnt -gt 0 ]; then
-    echo ""
-  else
-    echo "--branch $CAPROVER_BRANCH"
-  fi
+  echo ""
 }
 
 # ensureSingleApp deploy and configure a single Caprover app.
@@ -159,11 +153,18 @@ ensureSingleApp() {
   app_name=$(generateAppName ${2})
   echo "[app:$app_alias] app name: $app_name";
 
-  # Deploy app
+  ## Deploy app
   echo "[app:$app_alias] deployment step!";
   extra_opts=$(getCaproverOptions $app_ctx_path/captain-definition)
+  # Copy captain-definition file to root and commit to git so caprover will use it
+  cp $app_ctx_path/captain-definition ./captain-definition
+  git add .
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+  git commit -m "Commit temporary captain definition"
+
   set +e
-  res=$(caprover deploy --appName $app_name -c $app_ctx_path/captain-definition $extra_opts)
+  res=$(caprover deploy --appName $app_name $extra_opts)
   if [ $? -eq 0 ]; then
     set -e
     echo "$res";
@@ -175,14 +176,14 @@ ensureSingleApp() {
       createApp $app_name;
       waitApp $app_name;
       echo "[app:$app_alias] deployment step!";
-      caprover deploy --appName $app_name -c $app_ctx_path/captain-definition $extra_opts;
+      caprover deploy --appName $app_name $extra_opts;
     else
       echo "::error::[app:$app_alias]Caprover deploy failed."
       exit 1;
     fi
   fi
 
-  # Configure app
+  ## Configure app
   echo "[app:$app_alias] configuration step!";
   for f in $(find $app_ctx_path/ -type f | egrep -i 'yml|yaml|json' | sort); do
     echo "[app:$app_alias] - processing $f config file...";
@@ -194,7 +195,7 @@ ensureSingleApp() {
     setAppEnvVars $app_name $app_ctx_path/.env
   fi
 
-  # Output app name
+  ## Output app name
   setOutput "$app_alias" "$(echo $CAPROVER_URL | sed -e "s/:\/\/captain./:\/\/$app_name./g")"
 }
 
