@@ -30,18 +30,27 @@ KEY2=VALUE2
 ## Action parameters
 ### Input
 This Github Action requires the following parameters;
+
 - server
 
   Captain server url. For example, https://captain.your-domain.com.
+
 - password
 
   Captain password.
+
 - context
 
   The path of definition and configuration files of applications. Optional. Default: `.caprover/`
+
 - prefix
 
-  Prefix of Caprover app names. Optional. Default: `pr`
+  Prefix of Caprover app names. The app name is `${prefix}-${app_directory_name}`. `app_directory_name` is the directory name in the context path(`.caprover/`). Optional.
+  Default value is
+    - when the event type is `pull_reuqest`, `pr${repo_alias}-${EVENT_ID}`.
+    - For other event types, `br${repo_alias}-${EVENT_ID}`.
+  `repo_alias` is `GITHUB_REPOSITORY_ID` in Github action. In Gitea act, `GITHUB_REPOSITORY_ID` is `null` so a 6-length hash value generated from `GITHUB_REPOSITORY` is used.
+
 - keep
 
   It specifies whether to keep or remove the Caprover applicationswhen the workflow is finished. Optional. Default: `true`

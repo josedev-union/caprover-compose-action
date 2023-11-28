@@ -16,7 +16,7 @@ inputs:
     default: '.caprover'
   prefix:
     description: 'The prefix of app name'
-    default: 'pr'
+    default: 'Generative'
   keep:
     description: 'Specify whether to keep the deployment or not. If false, the deployment will be deleted.'
     default: 'true'
